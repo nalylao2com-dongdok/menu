@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Flip Menu - Updated Styles</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Sans Lao', sans-serif; }
+        
+        body {
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            background-color: #1a1a1a; padding: 10px; overflow: hidden; perspective: 2000px;
+        }
+
+        .book {
+            position: relative;
+            width: min(95vw, 420px);
+            height: min(95vh, 840px); 
+            transform-style: preserve-3d;
+        }
+
+        .page {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            background: #ffffff; border-radius: 0 10px 10px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column;
+            transform-origin: left center;
+            transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+            backface-visibility: hidden; overflow: hidden;
+        }
+
+        .page.flipped { transform: rotateY(-180deg); z-index: 0; }
+        .page.active { z-index: 2; transform: rotateY(0deg); }
+
+        .header-bar {
+            background: linear-gradient(135deg, #1B5E20 0%, #0D3E12 100%);
+            color: white; 
+            padding: 11px;
+            text-align: center; 
+            font-weight: 700; 
+            font-size: 14px;
+        }
+
+        .content { 
+            flex: 1; 
+            padding: 5px 10px 10px 10px;
+            overflow-y: auto; 
+        }
+
+        /* === Cover === */
+        .cover-content {
+            text-align: center; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; height: 100%; padding: 20px;
+        }
+        .cover-logo {
+            width: 220px; aspect-ratio: 1/1; object-fit: cover; border-radius: 50%;
+            border: 10px solid #1B5E20; box-shadow: inset 0 0 0 60px #ffffff, 0 4px 12px rgba(0,0,0,0.3);
+            margin-bottom: 25px; display: block;
+        }
+        .cover-title { color: #1B5E20; font-size: 26px; font-weight: 700; }
+
+        /* === Main Item === */
+        .main-item { 
+            display: flex; 
+            gap: 12px; 
+            margin-bottom: 7.5px;
+            align-items: stretch; 
+            background: #f9f9f9; 
+            padding: 8px; 
+            border-radius: 10px; 
+            border: 1px solid #eee; 
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .main-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .main-img { width: 44%; height: 125px; object-fit: cover; border-radius: 8px; cursor: pointer; }
+        .main-info { 
+            width: 56%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+        }
+        
+        .main-name-box {
+            background-color: #5D4037;
+            padding: 6px 8px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+        }
+
+        .en-name { font-size: 14px; font-weight: 700; color: #FFFFFF; display: block; }
+        .th-name { font-size: 11px; color: #EFEBE9; display: block; }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
+        }
+
+        .price-cart-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .price-text { 
+            color: #B71C1C; 
+            font-size: 16px; 
+            font-weight: 700; 
+        }
+
+        /* ไอคอนตะกร้าสีส้ม */
+        .cart-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            fill: #FF6F00;
+            pointer-events: auto;
+        }
+
+        .cart-icon:hover {
+            transform: scale(1.15);
+            fill: #E65100;
+        }
+
+        .cart-icon:active {
+            transform: scale(0.95);
+        }
+
+        /* === Sub Items === */
+        .product-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 4px;
+        }
+        .sub-item { 
+            background: #fff; 
+            border-radius: 8px; 
+            padding: 5px; 
+            border: 1px solid #eee; 
+            display: flex; 
+            flex-direction: column;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .sub-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .sub-img { width: 100%; height: 80px; object-fit: cover; border-radius: 5px; margin-bottom: 4px; cursor: pointer; }
+        .sub-en { font-size: 10px; font-weight: 700; color: #1B5E20; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .sub-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .sub-price-cart {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .price-text-small {
+            color: #B71C1C;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .cart-icon-small {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            fill: #FF6F00;
+            pointer-events: auto;
+        }
+
+        .cart-icon-small:hover {
+            transform: scale(1.15);
+            fill: #E65100;
+        }
+
+        /* === จำนวนสินค้า === */
+        .qty-box { display: flex; align-items: center; gap: 2px; }
+        .qty-btn { width: 22px; height: 22px; background: #8B4513; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .qty-input { 
+            width: 25px; 
+            height: 22px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd; 
+            font-size: 11px; 
+            font-weight: 700;
+            background: #fff;
+            color: #333;
+            -moz-appearance: textfield;
+        }
+        .qty-input::-webkit-outer-spin-button,
+        .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* Navigation */
+        .nav-btn { 
+            position: absolute; 
+            top: 10px;
+            width: 35px; 
+            height: 35px; 
+            background: #1B5E20; 
+            color: white; 
+            border: none; 
+            border-radius: 50%; 
+            z-index: 100; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .next-btn { right: 10px; }
+        .prev-btn { left: 10px; transform: scaleX(-1); }
+
+        /* === Modal Styles === */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow: hidden;
+            position: relative;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            background: #D32F2F;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
+            z-index: 10;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .modal-close:hover {
+            transform: scale(1.1);
+            background: #B71C1C;
+        }
+
+        .modal-close::before {
+            content: '×';
+            line-height: 1;
+        }
+
+        .modal-image-container {
+            width: 100%;
+            height: 255px; /* ปรับลดลงจาก 300px (ลด 15%) */
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .modal-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-details {
+            padding: 24px;
+            background: linear-gradient(to bottom, #ffffff, #fafafa);
+        }
+
+        .product-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+            flex-wrap: wrap;
+        }
+
+        .product-code {
+            font-size: 11px;
+            color: #fff;
+            background: #1B5E20;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .product-name-lao {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1B5E20;
+            line-height: 1.3;
+            flex: 1;
+        }
+
+        .product-name-thai {
+            font-size: 14px;
+            color: #5D4037;
+            margin-bottom: 16px;
+            font-weight: 600;
+            padding-left: 2px;
+        }
+
+        .product-description {
+            font-size: 14px;
+            color: #444;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            border-left: 4px solid #1B5E20;
+        }
+
+        .modal-price-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 2px dashed #ddd;
+        }
+
+        .modal-price-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .modal-price {
+            font-size: 28px;
+            color: #B71C1C;
+            font-weight: 700;
+        }
+
+        .modal-qty-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-qty-btn {
+            width: 36px;
+            height: 36px;
+            background: #1B5E20;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .modal-qty-btn:hover {
+            transform: scale(1.1);
+            background: #2E7D32;
+        }
+
+        .modal-qty-input {
+            width: 50px;
+            height: 36px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            background: white;
+        }
+
+        .add-to-cart-btn {
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px;
+            background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .add-to-cart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(27, 94, 32, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="book">
+    <div class="page active" id="p1">
+        <button class="nav-btn next-btn" onclick="nextPage()">➜</button>
+        <div class="header-bar">WELCOME</div>
+        <div class="content cover-content">
+            <img src="https://www.nalylaos.com/menu/images/logo_icon.ico" class="cover-logo">
+            <h1 class="cover-title">THE RESTAURANT</h1>
+            <p>Premium Dining Experience</p>
+        </div>
+    </div>
+
+    <div class="page" id="p2">
+        <button class="nav-btn prev-btn" onclick="prevPage()">➜</button>
+        <button class="nav-btn next-btn" onclick="nextPage()">➜</button>
+        <div class="header-bar">SEAFOOD - ອາຫານທະເລ</div>
+        <div class="content">
+            <div class="main-item" onclick="openModal(this)" 
+                 data-code="S001" 
+                 data-lao="ປາຊາຍແຊລມອນສະເຕັກ" 
+                 data-thai="สเต็กปลาแซลมอน" 
+                 data-desc="ປາຊາຍແຊລມອນແຊລມອນຄຸນນະພາບສູງຍ່າງກັບສະຫມັນ ແລະ ຜັກສົດຄຽງຄູ່ກັບຊອດພິເສດຂອງຮ້ານ" 
+                 data-price="₭450k"
+                 data-img="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600">
+                <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400" class="main-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                <div class="main-info">
+                    <div class="main-name-box">
+                        <span class="en-name">S001 - Salmon Steak</span>
+                        <span class="th-name">สเต็กปลาแซลมอน</span>
+                    </div>
+                    <div class="price-row">
+                        <div class="price-cart-group">
+                            <span class="price-text">₭450k</span>
+                            <!-- ไอคอนตะกร้าสีส้ม - กดแล้วเปิด Modal เหมือนกัน -->
+                            <svg class="cart-icon" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.main-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box">
+                            <button class="qty-btn" onclick="event.stopPropagation(); changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="event.stopPropagation(); changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-grid">
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="S002" 
+                     data-lao="ຕົ້ມກັບປາ" 
+                     data-thai="ต้มกุ้ง" 
+                     data-desc="ຕົ້ມກັບສົດໆໃສ່ສະຫມຸນໄພ ແລະ ເຄື່ອງເທດລາວ" 
+                     data-price="₭180k"
+                     data-img="https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=600">
+                    <img src="https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">S002 - Shrimp Soup</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭180k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="S003" 
+                     data-lao="ສະຫລັດປາທູນ່າ" 
+                     data-thai="สลัดปลาทูน่า" 
+                     data-desc="ປາທູນ່າສົດຫັ່ນເປັນຊິ້ນໆ ຄົກກັບຜັກກິນດິບ ແລະ ນ້ຳສະລັດງາຍີ່ປຸ່ນ" 
+                     data-price="₭220k"
+                     data-img="https://images.unsplash.com/photo-1534604973900-c43ab4c2e0ab?w=600">
+                    <img src="https://images.unsplash.com/photo-1534604973900-c43ab4c2e0ab?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">S003 - Tuna Salad</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭220k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="S004" 
+                     data-lao="ປາມຶກຍ່າງ" 
+                     data-thai="ปลาหมึกย่าง" 
+                     data-desc="ປາມຶກສົດຍ່າງໄຟອ່ອນ ທາດ້ວຍນ້ຳມັນງາ ແລະ ສະຫມຸນໄພ" 
+                     data-price="₭150k"
+                     data-img="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600">
+                    <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">S004 - Grilled Squid</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭150k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="S005" 
+                     data-lao="ປາ ແລະ ເຟຣນຟຣາຍ" 
+                     data-thai="ฟิชแอนด์ชิพส์" 
+                     data-desc="ປາຂາວຊຸບແປ້ງທອດກັບເຟຣນຟຣາຍ ກິນກັບຊອດທາທາ" 
+                     data-price="₭190k"
+                     data-img="https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=600">
+                    <img src="https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">S005 - Fish & Chips</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭190k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="S006" 
+                     data-lao="ກັບທອດ" 
+                     data-thai="กุ้งทอด" 
+                     data-desc="ກັບແມ່ນ້ຳຂອງຕົວໃຫຍ່ທອດກັບກະທຽມ ແລະ ພິກໄທ" 
+                     data-price="₭160k"
+                     data-img="https://images.unsplash.com/photo-1512152272829-e3139592d56f?w=600">
+                    <img src="https://images.unsplash.com/photo-1512152272829-e3139592d56f?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">S006 - Fried Shrimp</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭160k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="S007" 
+                     data-lao="ຫອຍນາງລົມສົດ" 
+                     data-thai="หอยนางรมสด" 
+                     data-desc="ຫອຍນາງລົມສົດຈາກທະເລກາງ ເສີບພ້ອມນ້ຳສົ້ມ ແລະ ຫອມແດງ" 
+                     data-price="₭250k"
+                     data-img="https://images.unsplash.com/photo-1535400255456-984241443b29?w=600">
+                    <img src="https://images.unsplash.com/photo-1535400255456-984241443b29?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">S007 - Oyster Fresh</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭250k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="p3">
+        <button class="nav-btn prev-btn" onclick="prevPage()">➜</button>
+        <div class="header-bar">WAGYU - ເນື້ອວາກິວ</div>
+        <div class="content">
+            <div class="main-item" onclick="openModal(this)" 
+                 data-code="W001" 
+                 data-lao="ເນື້ອວາກິວ A5" 
+                 data-thai="เนื้อวากิว A5" 
+                 data-desc="ເນື້ອວາກິວຍີ່ປຸ່ນເກຣດ A5 ແທ້ 100% ຍ່າງໄຟອ່ອນພ້ອມສະຫມຸນໄພລາວ" 
+                 data-price="₭1,290k"
+                 data-img="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600">
+                <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400" class="main-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                <div class="main-info">
+                    <div class="main-name-box">
+                        <span class="en-name">W001 - Beef Wagyu A5</span>
+                        <span class="th-name">เนื้อวากิว A5</span>
+                    </div>
+                    <div class="price-row">
+                        <div class="price-cart-group">
+                            <span class="price-text">₭1,290k</span>
+                            <svg class="cart-icon" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.main-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box">
+                            <button class="qty-btn" onclick="event.stopPropagation(); changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="event.stopPropagation(); changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-grid">
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="W002" 
+                     data-lao="ເບີເກີເນື້ອວາກິວ" 
+                     data-thai="เบอร์เกอร์เนื้อวากิว" 
+                     data-desc="ເບີເກີຮູບແບບລາວ ໃສ່ເນື້ອວາກິວຊິ້ນສົດ ແລະ ຜັກສົດ" 
+                     data-price="₭280k"
+                     data-img="https://images.unsplash.com/photo-1600891964092-4316c288032e?w=600">
+                    <img src="https://images.unsplash.com/photo-1600891964092-4316c288032e?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">W002 - Beef Burger</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭280k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="W003" 
+                     data-lao="ສະເຕັກປາເຕ້ເນື້ອວາກິວ" 
+                     data-thai="สปาเก็ตตี้เนื้อวากิว" 
+                     data-desc="ສະເຕັກປາເຕ້ຮູບແບບອິຕາລີ ຜັດກັບເນື້ອວາກິວຊິ້ນນ້ອຍ" 
+                     data-price="₭320k"
+                     data-img="https://images.unsplash.com/photo-1558030006-450675393462?w=600">
+                    <img src="https://images.unsplash.com/photo-1558030006-450675393462?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">W003 - Beef Pasta</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭320k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="W004" 
+                     data-lao="ຈີ່ເນື້ອວາກິວ" 
+                     data-thai="เสียบเนื้อวากิว" 
+                     data-desc="ເນື້ອວາກິວສົດເສີບຄູ່ກັບຫມາກເລັ່ນ ແລະ ຫົວຫອມ" 
+                     data-price="₭210k"
+                     data-img="https://images.unsplash.com/photo-1529692236671-f1f6e9460272?w=600">
+                    <img src="https://images.unsplash.com/photo-1529692236671-f1f6e9460272?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">W004 - Beef Skewers</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭210k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="W005" 
+                     data-lao="ເນື້ອວາກິວດິບ" 
+                     data-thai="เนื้อวากิวดิบ" 
+                     data-desc="ເນື້ອວາກິວສົດຫັ່ນເປັນຊິ້ນນ້ອຍ ຄົກກັບໄຂ່ຂາວ ແລະ ສະຫມຸນໄພ" 
+                     data-price="₭350k"
+                     data-img="https://images.unsplash.com/photo-1594041680534-e8c8cdebd679?w=600">
+                    <img src="https://images.unsplash.com/photo-1594041680534-e8c8cdebd679?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">W005 - Beef Tartare</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭350k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="W006" 
+                     data-lao="ຕົ້ມເນື້ອວາກິວ" 
+                     data-thai="ต้มเนื้อวากิว" 
+                     data-desc="ຕົ້ມເນື້ອວາກິວກັບສະຫມຸນໄພລາວ ເພື່ອສຸຂະພາບ" 
+                     data-price="₭240k"
+                     data-img="https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=600">
+                    <img src="https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">W006 - Beef Soup</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭240k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-item" onclick="openModal(this)" 
+                     data-code="W007" 
+                     data-lao="ສະເຕັກເນື້ອວາກິວ" 
+                     data-thai="สเต็กเนื้อวากิว" 
+                     data-desc="ສະເຕັກເນື້ອວາກິວຍ່າງໄຟອ່ອນ ກິນກັບສະຫລັດຜັກ" 
+                     data-price="₭480k"
+                     data-img="https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=600">
+                    <img src="https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=200" class="sub-img" onclick="event.stopPropagation(); openModal(this.parentElement)">
+                    <span class="sub-en">W007 - Beef Steak</span>
+                    <div class="sub-footer">
+                        <div class="sub-price-cart">
+                            <span class="price-text-small">₭480k</span>
+                            <svg class="cart-icon-small" viewBox="0 0 24 24" onclick="event.stopPropagation(); openModal(this.closest('.sub-item'))">
+                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="qty-box" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty(this,-1)">-</button>
+                            <input type="number" class="qty-input" value="0" readonly>
+                            <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="productModal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeModal()"></button>
+        <div class="modal-image-container">
+            <img src="" alt="Product" class="modal-image" id="modalImg">
+        </div>
+        <div class="modal-details">
+            <div class="product-header">
+                <span class="product-code" id="modalCode">S001</span>
+                <span class="product-name-lao" id="modalLao">ປາຊາຍແຊລມອນສະເຕັກ</span>
+            </div>
+            <div class="product-name-thai" id="modalThai">สเต็กปลาแซลมอน</div>
+            <div class="product-description" id="modalDesc">
+                ປາຊາຍແຊລມອນແຊລມອນຄຸນນະພາບສູງຍ່າງກັບສະຫມັນ ແລະ ຜັກສົດຄຽງຄູ່ກັບຊອດພິເສດຂອງຮ້ານ
+            </div>
+            <div class="modal-price-section">
+                <div>
+                    <div class="modal-price-label">ລາຄາ / ราคา</div>
+                    <div class="modal-price" id="modalPrice">₭450k</div>
+                </div>
+                <div class="modal-qty-section">
+                    <button class="modal-qty-btn" onclick="changeModalQty(-1)">−</button>
+                    <input type="number" class="modal-qty-input" id="modalQty" value="0" readonly>
+                    <button class="modal-qty-btn" onclick="changeModalQty(1)">+</button>
+                </div>
+            </div>
+            <button class="add-to-cart-btn" onclick="addToCart()">ເພີ່ມໃສ່ຕະກ້າ / เพิ่มลงตะกร้า</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentIdx = 1;
+    const totalPages = 3;
+    const pages = [document.getElementById('p1'), document.getElementById('p2'), document.getElementById('p3')];
+    
+    let currentProduct = null;
+
+    function updateView() {
+        pages.forEach((page, i) => {
+            const pageNum = i + 1;
+            page.classList.remove('active', 'flipped');
+            if (pageNum === currentIdx) page.classList.add('active');
+            else if (pageNum < currentIdx) page.classList.add('flipped');
+        });
+    }
+
+    function nextPage() { if (currentIdx < totalPages) { currentIdx++; updateView(); } }
+    function prevPage() { if (currentIdx > 1) { currentIdx--; updateView(); } }
+    
+    function changeQty(btn, change) {
+        const input = btn.parentElement.querySelector('.qty-input');
+        let val = parseInt(input.value) + change;
+        if (val >= 0) input.value = val;
+    }
+
+    // Modal Functions
+    function openModal(element) {
+        const code = element.getAttribute('data-code');
+        const lao = element.getAttribute('data-lao');
+        const thai = element.getAttribute('data-thai');
+        const desc = element.getAttribute('data-desc');
+        const price = element.getAttribute('data-price');
+        const img = element.getAttribute('data-img');
+        
+        currentProduct = { code, lao, thai, desc, price, img };
+        
+        document.getElementById('modalCode').textContent = code;
+        document.getElementById('modalLao').textContent = lao;
+        document.getElementById('modalThai').textContent = thai;
+        document.getElementById('modalDesc').textContent = desc;
+        document.getElementById('modalPrice').textContent = price;
+        document.getElementById('modalImg').src = img;
+        document.getElementById('modalQty').value = 0;
+        
+        document.getElementById('productModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(event) {
+        if (!event || event.target === document.getElementById('productModal') || event.target.classList.contains('modal-close')) {
+            document.getElementById('productModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function changeModalQty(change) {
+        const input = document.getElementById('modalQty');
+        let val = parseInt(input.value) + change;
+        if (val >= 0) input.value = val;
+    }
+
+    function addToCart() {
+        const qty = document.getElementById('modalQty').value;
+        if (qty > 0) {
+            alert('เพิ่ม ' + currentProduct.lao + ' จำนวน ' + qty + ' รายการ');
+            closeModal();
+        } else {
+            alert('กรุณาเลือกจำนวนสินค้า');
+        }
+    }
+</script>
+</body>
+</html>
